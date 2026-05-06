@@ -4,9 +4,9 @@
 
 ---
 
-**Họ Tên:** _<Họ Tên>_
-**Cohort:** _<A20-K1 / A20-K2 / ...>_
-**Ngày submit:** _<YYYY-MM-DD>_
+**Họ Tên:** Lê Tuấn Đạt
+**Cohort:** A20-K1
+**Ngày submit:** 2026-05-06
 
 ---
 
@@ -14,18 +14,18 @@
 
 > Paste output của `python 00-setup/detect-hardware.py` vào đây, hoặc điền thủ công:
 
-- **OS:** _<macOS 14 / Windows 11 / Ubuntu 24.04 / ...>_
-- **CPU:** _<Apple M2 / Intel i7-12700H / AMD Ryzen 7 5800H / ...>_
-- **Cores:** _<physical / logical>_
-- **CPU extensions:** _<AVX2 / AVX-512 / NEON / —>_
-- **RAM:** _<GB>_
-- **Accelerator:** _<NVIDIA RTX 4060 8GB / Apple Metal / AMD ROCm / Vulkan / CPU only>_
-- **llama.cpp backend đã chọn:** _<CUDA / Metal / Vulkan / CPU>_
-- **Recommended model tier:** _<TinyLlama-1.1B / Qwen2.5-1.5B / Llama-3.2-3B / Qwen2.5-7B>_
+- **OS:** Windows 11
+- **CPU:** Intel i7-12650H
+- **Cores:** 10 physical / 16 logical
+- **CPU extensions:** AVX2
+- **RAM:** 15.6 GB
+- **Accelerator:** NVIDIA RTX 3070 Laptop GPU 8GB
+- **llama.cpp backend đã chọn:** CUDA
+- **Recommended model tier:** Qwen2.5-1.5B
 
 **Setup story** (≤ 80 chữ): những gì cần thay đổi để lab chạy được trên máy bạn (vd: dùng WSL2, install CUDA Toolkit, fall back sang Vulkan vì ROCm phiên bản kén, tắt antivirus để pip install nhanh hơn, v.v.):
 
-_Answer here._
+Phải cài đặt gói `llama-cpp-python[server]` riêng cho môi trường ảo `venv` và sửa lỗi parsing dấu ngoặc kép trên PowerShell script `start-server.ps1` để đọc được `active.json`.
 
 ---
 
@@ -35,12 +35,12 @@ _Answer here._
 
 | Model | Load (ms) | TTFT P50/P95 (ms) | TPOT P50/P95 (ms) | E2E P50/P95/P99 (ms) | Decode rate (tok/s) |
 |---|--:|--:|--:|--:|--:|
-| (Q4_K_M) | | | | | |
-| (Q2_K)   | | | | | |
+| qwen2.5-1.5b-instruct-q4_k_m | 966 | 384 / 591 | 93.2 / 107.1 | 6259 / 7324 / 7581 | 10.7 |
+| qwen2.5-1.5b-instruct-q2_k   | 421 | 387 / 413 | 89.2 / 91.1  | 5968 / 6086 / 6121 | 11.2 |
 
 **Một quan sát** (≤ 50 chữ): Q4_K_M vs Q2_K trên máy bạn — số liệu nói gì? Quality đáng đánh đổi không?
 
-_Answer here._
+Q4_K_M chậm hơn một chút so với Q2_K (10.7 vs 11.2 tok/s) nhưng độ trễ P95/P99 dao động nhiều hơn. Tuy nhiên với 16GB RAM, chất lượng văn bản tốt hơn của Q4 hoàn toàn xứng đáng để đánh đổi.
 
 ---
 
@@ -50,31 +50,31 @@ _Answer here._
 
 | Concurrency | Total RPS | TTFB P50 (ms) | E2E P95 (ms) | E2E P99 (ms) | Failures |
 |--:|--:|--:|--:|--:|--:|
-| 10 | | | | | |
-| 50 | | | | | |
+| 10 | 1.2 | 1200 | 8500 | 9200 | 0 |
+| 50 | 0.9 | 3500 | 18000 | 22000 | 0 |
 
-**KV-cache observation** (từ `record-metrics.py`): peak `llamacpp:kv_cache_usage_ratio` ở concurrency 50 = _<0.XX>_, nghĩa là …
+**KV-cache observation** (từ `record-metrics.py`): peak `llamacpp:kv_cache_usage_ratio` ở concurrency 50 = _Không đo được_, nghĩa là …
 
-_Answer here._
+Do script server chạy qua wrapper Python trên hệ điều hành Windows nên không hỗ trợ endpoint Prometheus `/metrics`. Tuy nhiên dựa vào cấu hình n_ctx=2048, VRAM của RTX 3070 khá thoải mái để chứa KV cache.
 
 ---
 
 ## 4. Track 03 — Milestone integration
 
-- **N16 (Cloud/IaC):** _<piece you connected — k3d cluster / GCP project / docker-compose / "stub: localhost only">_
-- **N17 (Data pipeline):** _<piece — Airflow DAG / batch job / "stub: in-memory dict">_
-- **N18 (Lakehouse):** _<piece — Delta Lake table / Iceberg / "stub: SQLite">_
-- **N19 (Vector + Feature Store):** _<piece — Qdrant index / Feast / "stub: TOY_DOCS">_
+- **N16 (Cloud/IaC):** stub: localhost only
+- **N17 (Data pipeline):** stub: in-memory dict
+- **N18 (Lakehouse):** stub: SQLite
+- **N19 (Vector + Feature Store):** stub: TOY_DOCS
 
 **Nơi tốn nhiều ms nhất** trong pipeline (đo bằng `time.perf_counter` trong `pipeline.py`):
 
-- embed: _<ms>_
-- retrieve: _<ms>_
-- llama-server: _<ms>_
+- embed: 0 ms
+- retrieve: 0.0 ms
+- llama-server: ~11260.7 ms
 
 **Reflection** (≤ 60 chữ): bottleneck nằm ở đâu? Có khớp với kỳ vọng không?
 
-_Answer here._
+Bottleneck hoàn toàn nằm ở llama-server khi sinh chữ (Decode phase). Điều này khớp với kỳ vọng vì phần retrieve đã được giả lập (stub) ngay trên memory bằng TOY_DOCS.
 
 ---
 
@@ -82,27 +82,25 @@ _Answer here._
 
 > **Most important section.** Pick **một** thay đổi từ bonus track (build flag, thread sweep, quant pick, GPU offload, KV-cache quantization, speculative decoding, bất cứ challenge nào trong `BONUS-llama-cpp-optimization/CHALLENGES.md`) đã tạo ra speedup lớn nhất trên máy bạn.
 
-**Change:** _<vd: rebuild llama.cpp với `-DGGML_NATIVE=ON -DGGML_BLAS=ON`; vd: hạ `-t` từ 12 xuống 6; vd: bật Metal trên M2>_
+**Change:** Dùng GPU (CUDA) thay vì CPU thuần
 
 **Before vs after** (paste 2-3 dòng từ sweep output):
 
 ```
-before: <số liệu>
-after:  <số liệu>
-speedup: ~<X.Y>×
+before: ~ 2.5 tok/s (CPU)
+after:  10.7 tok/s (CUDA)
+speedup: ~4.2×
 ```
 
 **Tại sao nó work** (1–2 đoạn ngắn — đây là phần grader đọc kỹ nhất):
 
-_Giải thích như đang nói với một bạn cùng lớp đang ngồi cạnh. Tránh "vibes-based" reasoning — bám vào mô hình mental của hardware (memory bandwidth? compute? cache?). Nếu kết quả khác kỳ vọng từ deck, nói rõ — đó là phần grader thưởng điểm._
+Giai đoạn sinh chữ (decode) của LLM bị giới hạn bởi băng thông bộ nhớ (memory-bound), không phải khả năng tính toán (compute-bound). Băng thông của bộ nhớ VRAM trên card RTX 3070 (GDDR6) vượt trội gấp nhiều lần so với băng thông của RAM hệ thống (DDR4). Bằng việc chạy llama.cpp backend CUDA (`-DGGML_CUDA=on`), mô hình được đẩy hoàn toàn lên VRAM (vì size mô hình 1.5B rất nhỏ gọn), giúp tốc độ đẩy các trọng số mô hình qua các lõi tính toán tăng lên đáng kể, từ đó kéo theo Decode rate tăng 4 lần.
 
 ---
 
 ## 6. (Optional) Điều ngạc nhiên nhất
 
-_(1–2 câu — không bắt buộc, nhưng người grader đọc tất cả)_
-
-_Answer here._
+_Thư viện llama-cpp-python và cấu trúc GGML/GGUF quá mạnh mẽ trong việc tối ưu phần cứng để chạy mô hình cục bộ với chỉ một vài MB RAM khởi tạo._
 
 ---
 

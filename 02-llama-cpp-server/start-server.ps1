@@ -3,8 +3,8 @@
 $ErrorActionPreference = 'Stop'
 Set-Location (Join-Path $PSScriptRoot '..')
 
-$model   = python -c 'import json; print(json.load(open("models/active.json"))["primary_model"])'
-$threads = python -c 'import json; hw=json.load(open("hardware.json")); print(hw["cpu"].get("cores_physical") or 4)'
+$model   = python -c "import json; print(json.load(open('models/active.json'))['primary_model'])"
+$threads = python -c "import json; hw=json.load(open('hardware.json')); print(hw['cpu'].get('cores_physical') or 4)"
 $gpu     = if ($env:LAB_N_GPU_LAYERS) { $env:LAB_N_GPU_LAYERS } else { '99' }
 $ctx     = if ($env:LAB_N_CTX) { $env:LAB_N_CTX } else { '2048' }
 
